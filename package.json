@@ -1,0 +1,24 @@
+{
+  "name": "buffhammer",
+  "version": "1.0.0",
+  "description": "A Canvas Game",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabean/buffhammer.git"
+  },
+  "author": "Josh Fabean",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fabean/buffhammer/issues"
+  },
+  "homepage": "https://github.com/fabean/buffhammer#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-serve": "^1.4.0",
+    "gulp-server-livereload": "^1.8.4"
+  }
+}
