@@ -14,7 +14,7 @@ gulp.task('html', function () {
 });
  
 gulp.task('watch', function () {
-  gulp.watch(['./app/*.html'], ['html']);
+  gulp.watch(['./app/*.html', './app/*/*.js', './app/*/*.css'], ['html']);
 });
  
 gulp.task('default', ['connect', 'watch']);
