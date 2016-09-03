@@ -9,10 +9,12 @@ let c,
         y: 0,
         speed: {
           x: 5,
-          y: 5
+          y: 5,
+          rotate: 5,
         },
         width: 10,
-        height: 10
+        height: 10,
+        rotation: 180,
       },
       score: 0,
       lives: 10,
@@ -45,6 +47,10 @@ window.onload = ()  => {
     height: c.height
   };
 
+  // we now know the size so lets put the ship in the middle
+  player.ship.x = (c.width/2) - (player.ship.width/2);
+  player.ship.y = (c.height/2) - (player.ship.height/2);
+
   // Handle keyboard controls
   addEventListener("keydown", function (e) {
     e.preventDefault(); // this stops screen wiggle
@@ -68,7 +74,8 @@ let render = () => {
   drawRect(backGround);
 
   movePlayer();
-  drawRect(player.ship);
+  drawShip(player.ship, player.ship.rotation);
+  //drawRect(player.ship, player.ship.rotation);
 
   // write the score
   let score = {
@@ -87,9 +94,15 @@ let render = () => {
   drawText(health);
 }
 
+// I'm changing it so you have to run so only up & down will let you move. This means the if's for wall collision need to be rewritten
 let movePlayer = () => {
   if (38 in keysDown) { // Player holding up
-    player.ship.y += -(player.ship.speed.y);
+    let ySpeed = player.ship.speed.y / (player.ship.rotation/18);// doing crazy things at this point
+    console.log(ySpeed);
+
+    player.ship.y = -ySpeed + player.ship.y;
+    player.ship.x += (player.ship.speed.y - ySpeed); // 5 is your max move so whatever didn't get used by y goes to x?
+    console.log(player.ship.speed.y - ySpeed);
     // going to check if they've hit the top, if they have, put them on the bottom
     if (player.ship.y <= 0) {
       player.ship.y = c.height;
@@ -103,16 +116,26 @@ let movePlayer = () => {
     }
   }
   if (37 in keysDown) { // Player holding left
-    player.ship.x += -(player.ship.speed.x);
+    //player.ship.x += -(player.ship.speed.x);
     if (player.ship.x <= 0) {
       player.ship.x = c.width;
     }
+    player.ship.rotation += -player.ship.speed.rotate; // left is a negative degree
+    if (player.ship.rotation == 0) {
+      player.ship.rotation = 360; // i think 0 breaks everything
+    }
+  console.log(player.ship);
   }
   if (39 in keysDown) { // Player holding right
-    player.ship.x += player.ship.speed.x;
+    //player.ship.x += player.ship.speed.x;
     if (player.ship.x >= c.width) {
       player.ship.x = 0;
     }
+    player.ship.rotation += player.ship.speed.rotate; // right is a positive degree
+    if (player.ship.rotation == 0) {
+      player.ship.rotation = 360; // i think 0 breaks everything
+    }
+  console.log(player.ship.rotation);
   }
 }
 
@@ -125,9 +148,24 @@ let drawCircle = (circle) => {
 }
 
 // if you want to draw lots of rectangles you'll use this function
-let drawRect = (rectangle) => {
+let drawRect = (rectangle, rotation = 0) => {
   ctx.fillStyle = rectangle.color;
+  ctx.rotate(rotation * Math.PI / 180); // this is used to rotate the object
   ctx.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // honestly no idea that this is: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+};
+
+let drawShip = (rectangle, rotation = 0) => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.translate((rectangle.x + rectangle.width / 2), (rectangle.y + rectangle.height / 2)); // this is supposed to rotate it around the center point
+  ctx.rotate(rotation * Math.PI / 180); // this is used to rotate the object
+  ctx.rect(-rectangle.width/2, -rectangle.height/2, rectangle.width, rectangle.height);
+  ctx.fillStyle = rectangle.color;
+  ctx.fill();
+  //ctx.fillRect(-rectangle.x/2, -rectangle.y/2, rectangle.width, rectangle.height);
+  //ctx.setTransform(1, 0, 0, 1, 0, 0); // honestly no idea that this is: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+  ctx.restore();
 };
 
 // if you want to draw some text on the screen use this function
