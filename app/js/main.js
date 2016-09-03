@@ -47,9 +47,11 @@ window.onload = ()  => {
 
   // Handle keyboard controls
   addEventListener("keydown", function (e) {
+    e.preventDefault(); // this stops screen wiggle
     keysDown[e.keyCode] = true;
   }, false);
   addEventListener("keyup", function (e) {
+    e.preventDefault(); // this stops screen wiggle
     delete keysDown[e.keyCode];
   }, false);
 
@@ -71,39 +73,45 @@ let render = () => {
   // write the score
   let score = {
     message: `Score: ${player.score}`,
-    x: 100,
-    y: 50
+    x: 50,
+    y: 20
   }
   drawText(score);
 
   // write the health
   let health = {
     message: `Lives Remaining: ${player.lives}`,
-    x: 500,
-    y: 50
+    x: (c.width - 200),
+    y: 20
   }
   drawText(health);
 }
 
 let movePlayer = () => {
   if (38 in keysDown) { // Player holding up
-    if (10 <= player.ship.y) {
-      player.ship.y += -(player.ship.speed.y);
+    player.ship.y += -(player.ship.speed.y);
+    // going to check if they've hit the top, if they have, put them on the bottom
+    if (player.ship.y <= 0) {
+      player.ship.y = c.height;
     }
   }
   if (40 in keysDown) { // Player holding down
-    if (c.height-10 >= player.ship.y) {
-      player.ship.y += player.ship.speed.y;
+    player.ship.y += player.ship.speed.y;
+    // going to check if they've hit the top, if they have, put them on the bottom
+    if (player.ship.y >= c.height) {
+      player.ship.y = 0;
     }
   }
   if (37 in keysDown) { // Player holding left
-    if (10 <= player.ship.x) {
-      player.ship.x += -(player.ship.speed.x);
+    player.ship.x += -(player.ship.speed.x);
+    if (player.ship.x <= 0) {
+      player.ship.x = c.width;
     }
   }
   if (39 in keysDown) { // Player holding right
-    if (c.width-10 >= player.ship.x) {
-      player.ship.x += player.ship.speed.x;
+    player.ship.x += player.ship.speed.x;
+    if (player.ship.x >= c.width) {
+      player.ship.x = 0;
     }
   }
 }

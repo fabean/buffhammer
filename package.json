@@ -18,7 +18,6 @@
   "homepage": "https://github.com/fabean/buffhammer#readme",
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-serve": "^1.4.0",
-    "gulp-server-livereload": "^1.8.4"
+    "gulp-connect": "^5.0.0",
   }
 }

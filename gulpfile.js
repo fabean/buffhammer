@@ -1,12 +1,20 @@
-var gulp = require('gulp');
-var server = require('gulp-server-livereload');
+var gulp = require('gulp'),
+  connect = require('gulp-connect');
  
-gulp.task('webserver', function() {
-  gulp.src('app')
-    .pipe(server({
-      fallback: 'index.html',
-      livereload: true,
-      directoryListing: true,
-      open: true
-    }));
+gulp.task('connect', function() {
+  connect.server({
+    root: 'app',
+    livereload: true
+  });
 });
+ 
+gulp.task('html', function () {
+  gulp.src('./app/*.html')
+    .pipe(connect.reload());
+});
+ 
+gulp.task('watch', function () {
+  gulp.watch(['./app/*.html'], ['html']);
+});
+ 
+gulp.task('default', ['connect', 'watch']);
