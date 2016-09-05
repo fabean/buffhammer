@@ -1,7 +1,7 @@
 let c,
     ctx,
     fps = 60,
-    backGround,
+    background,
     player = {
       ship: {
         color: '#fff',
@@ -42,7 +42,7 @@ window.onload = ()  => {
 
   ctx = c.getContext('2d');
 
-  backGround = {
+  background = {
     color: '#000',
     x: 0,
     y: 0,
@@ -74,7 +74,7 @@ let animationLoop = () => {
 
 let render = () => {
   // all of your render code goes here
-  drawRect(backGround);
+  drawRect(background);
 
   movePlayer();
   drawShip(player.ship, player.ship.rotation);
@@ -103,48 +103,46 @@ let movePlayer = () => {
     var movement = calcMove(player.ship.rotation, 'forward', player.ship.speed.currentSpeed);
     player.ship.y += movement.y;
     player.ship.x += movement.x;
-    // going to check if they've hit the top, if they have, put them on the bottom
-    if (player.ship.y <= 0) {
-      player.ship.y = c.height;
-    }
+    calcWallCollision();
   }
   if (40 in keysDown) { // Player holding down
-    player.ship.y += player.ship.speed.y;
-    // going to check if they've hit the top, if they have, put them on the bottom
-    if (player.ship.y >= c.height) {
-      player.ship.y = 0;
-    }
+    var movement = calcMove(player.ship.rotation, 'backward', player.ship.speed.currentSpeed);
+    player.ship.y += movement.y;
+    player.ship.x += movement.x;
+    calcWallCollision();
   }
   if (37 in keysDown) { // Player holding left
-    //player.ship.x += -(player.ship.speed.x);
-    if (player.ship.x <= 0) {
-      player.ship.x = c.width;
-    }
     player.ship.rotation += -player.ship.speed.rotate; // left is a negative degree
-    if (player.ship.rotation == 0) {
-      player.ship.rotation = 360; // i think 0 breaks everything
-    }
-  console.log(player.ship);
   }
   if (39 in keysDown) { // Player holding right
-    //player.ship.x += player.ship.speed.x;
-    if (player.ship.x >= c.width) {
-      player.ship.x = 0;
-    }
     player.ship.rotation += player.ship.speed.rotate; // right is a positive degree
-    if (player.ship.rotation == 0) {
-      player.ship.rotation = 360; // i think 0 breaks everything
-    }
+  }
+}
+
+// if you hit the wall jump to the other side
+let calcWallCollision = () => {
+  if (player.ship.y <= 0) {
+    player.ship.y = c.height;
+  }
+  else if (player.ship.y >= c.height) {
+    player.ship.y = 0;
+  }
+  if (player.ship.x <= 0) {
+    player.ship.x = c.width;
+  }
+  else if (player.ship.x >= c.width) {
+    player.ship.x = 0;
   }
 }
 
 // I need to do some math to figure out how much and where to move the object
+// planning on using direction to know if you hit up for down since that will do something different
 let calcMove = (degree, direction, speed) => {
   // we need to using your speed (Hypotenuse) find your movement on X & Y
   degree = degree % 90; // triangles have a max angle of 90
   console.log(degree);
   var movement = {};
-  movement.x = Math.sqrt(Math.sin(degree * Math.PI / 180.0) * speed); // turns out Math.sin uses radians instead of deg
+  movement.x = Math.sin(degree * Math.PI / 180.0) * speed; // turns out Math.sin uses radians instead of deg
   movement.y = -Math.sqrt(Math.pow(speed,2) - Math.pow(movement.x,2));
 
   console.log(movement);
