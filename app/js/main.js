@@ -123,14 +123,13 @@ let movePlayer = () => {
 let calcWallCollision = () => {
   if (player.ship.y <= 0) {
     player.ship.y = c.height;
-  }
-  else if (player.ship.y >= c.height) {
+  } else if (player.ship.y >= c.height) {
     player.ship.y = 0;
   }
+
   if (player.ship.x <= 0) {
     player.ship.x = c.width;
-  }
-  else if (player.ship.x >= c.width) {
+  } else if (player.ship.x >= c.width) {
     player.ship.x = 0;
   }
 }
@@ -139,11 +138,51 @@ let calcWallCollision = () => {
 // planning on using direction to know if you hit up for down since that will do something different
 let calcMove = (degree, direction, speed) => {
   // we need to using your speed (Hypotenuse) find your movement on X & Y
-  degree = degree % 90; // triangles have a max angle of 90
+  let triangleDegree = degree % 90; // triangles have a max angle of 90
   console.log(degree);
+
   var movement = {};
-  movement.x = Math.sin(degree * Math.PI / 180.0) * speed; // turns out Math.sin uses radians instead of deg
-  movement.y = -Math.sqrt(Math.pow(speed,2) - Math.pow(movement.x,2));
+  movement.adjacent = Math.sin(triangleDegree * Math.PI / 180.0) * speed; // turns out Math.sin uses radians instead of deg
+  movement.opposite = Math.sqrt(Math.pow(speed,2) - Math.pow(movement.adjacent,2));
+  let positiveDegree = degree;
+  // degree for this needs to always be positive
+  // this isn't a good enough check it turns out when you're negative I think x&y need to be flipped too.
+  if (Math.sign(positiveDegree) == -1) {
+    positiveDegree = -(positiveDegree);
+  }
+  // I need to figure out what quadrant (that's what I'm calling it) you're currently moving in, based on that the X,Y values could flip or get negated.
+  let quadrantDegree = positiveDegree % 360;
+  if (Math.sign(degree) == -1) {
+    console.log('here');
+    if (quadrantDegree <= 90) {
+      movement.x = movement.opposite;
+      movement.y = -(movement.adjacent);
+    } else if (quadrantDegree <= 180) {
+      movement.y = -movement.opposite;
+      movement.x = -movement.adjacent;
+    } else if (quadrantDegree <= 270) {
+      movement.x = -movement.opposite;
+      movement.y = movement.adjacent;
+    } else if (quadrantDegree <= 360) {
+      movement.y = (movement.opposite);
+      movement.x = (movement.adjacent);
+    }
+  } else {
+    if (quadrantDegree <= 90) {
+      movement.y = -(movement.opposite);
+      movement.x = movement.adjacent;
+    } else if (quadrantDegree <= 180) {
+      movement.x = movement.opposite;
+      movement.y = movement.adjacent;
+    } else if (quadrantDegree <= 270) {
+      movement.y = movement.opposite;
+      movement.x = -(movement.adjacent);
+    } else if (quadrantDegree <= 360) {
+      movement.x = -(movement.opposite);
+      movement.y = -(movement.adjacent);
+    }
+  }
+
 
   console.log(movement);
   return movement;
