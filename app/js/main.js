@@ -18,6 +18,12 @@ let c,
         width: 10,
         height: 10,
         rotation: 0,
+        lasers: {
+          rate: 500, //ms
+          charged: 1,
+          power: 1,
+          active : []
+        }
       },
       score: 0,
       lives: 10,
@@ -78,7 +84,8 @@ let render = () => {
 
   movePlayer();
   drawShip(player.ship, player.ship.rotation);
-  //drawRect(player.ship, player.ship.rotation);
+
+  drawLasers(player.ship.lasers.active);
 
   // write the score
   let score = {
@@ -117,10 +124,13 @@ let movePlayer = () => {
   if (39 in keysDown) { // Player holding right
     player.ship.rotation += player.ship.speed.rotate; // right is a positive degree
   }
+  if (32 in keysDown) { // space
+    fireLaser();
+  }
 }
 
 // if you hit the wall jump to the other side
-let calcWallCollision = () => {
+let calcWallCollision = (x, y) => {
   if (player.ship.y <= 0) {
     player.ship.y = c.height;
   } else if (player.ship.y >= c.height) {
@@ -131,6 +141,37 @@ let calcWallCollision = () => {
     player.ship.x = c.width;
   } else if (player.ship.x >= c.width) {
     player.ship.x = 0;
+  }
+}
+
+let fireLaser = () => {
+  // only fire if charged
+  if (player.ship.lasers.charged) {
+    player.ship.lasers.charged = 0; // don't let us fire again until recharged
+    console.log('pew');
+    let laser = {
+      x: player.ship.x + (player.ship.width / 2) -1,
+      y: player.ship.y,
+      width: 2,
+      height: 6,
+      color: 'red',
+      rotation: player.ship.rotation,
+      speed: 10 // this should be a variable and can get faster/slower based on powerups maybe
+    }
+    player.ship.lasers.active.push(laser);
+    setTimeout(() => {
+      player.ship.lasers.charged = 1;
+    }, player.ship.lasers.rate);
+  }
+}
+
+// function to draw lasers
+let drawLasers = (lasers) => {
+  for (let i = 0; i < lasers.length; i++) {
+    var movement = calcMove(lasers[i].rotation, 'forward', lasers[i].speed);
+    lasers[i].y += movement.y;
+    lasers[i].x += movement.x;
+    drawShip(lasers[i], lasers[i].rotation);
   }
 }
 
