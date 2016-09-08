@@ -19,7 +19,7 @@ let c,
         height: 10,
         rotation: 0,
         lasers: {
-          rate: 500, //ms
+          rate: 200, //ms
           charged: 1,
           power: 1,
           active : []
@@ -28,6 +28,7 @@ let c,
       score: 0,
       lives: 10,
     },
+    asteroids = [],
     keysDown = {};
 
 // I've made player an object with ship instead it because I would think lots of other things go in there too.
@@ -83,9 +84,14 @@ let render = () => {
   drawRect(background);
 
   movePlayer();
-  drawShip(player.ship, player.ship.rotation);
+  drawRotatedRectangle(player.ship, player.ship.rotation);
 
   drawLasers(player.ship.lasers.active);
+
+  getAsteroids();
+
+  calcLaserHits();
+  calcAsteroidHits();
 
   // write the score
   let score = {
@@ -171,7 +177,94 @@ let drawLasers = (lasers) => {
     var movement = calcMove(lasers[i].rotation, 'forward', lasers[i].speed);
     lasers[i].y += movement.y;
     lasers[i].x += movement.x;
-    drawShip(lasers[i], lasers[i].rotation);
+    if (
+      lasers[i].x > (c.width+50) ||
+      lasers[i].x < -50 ||
+      lasers[i].y > (c.height+50) ||
+      lasers[i].y < -50) {
+        player.ship.lasers.active.splice(i, 1); // remove this laser from the array because it's off screen
+    } else {
+      drawRotatedRectangle(lasers[i], lasers[i].rotation);
+    }
+  }
+}
+
+let getAsteroids = () => {
+  let randomNumber = Math.floor(Math.random() * 75); // between 0-75
+  // random number to decide if we should make a new asteroid
+  if (randomNumber == 42) {
+    generateAsteroids();
+  }
+
+  for (let i = 0; i < asteroids.length; i++) {
+    var movement = calcMove(asteroids[i].degree, 'sure', asteroids[i].speed); // calc where we're going
+    asteroids[i].y += movement.y;
+    asteroids[i].x += movement.x;
+    // I'm giving everything a +-50pixel from edge of screen buffer before we drop it
+    if (
+      asteroids[i].x > (c.width+50) ||
+      asteroids[i].x < -50 ||
+      asteroids[i].y > (c.height+50) ||
+      asteroids[i].y < -50) {
+        asteroids.splice(i, 1); // remove this astroid from the array because it's off screen
+    } else {
+      drawRotatedRectangle(asteroids[i], asteroids[i].degree);
+    }
+  }
+};
+
+// need to randomly create asteroids
+let generateAsteroids = () => {
+  // most of this is going to be completely randomly generated
+  let min = 4;
+  let max = 50;
+  let asteroid = {
+    x: Math.floor(Math.random() * (c.width + 100) - 50),
+    y: Math.floor(Math.random() * (c.height + 100) - 50),
+    width: Math.floor(Math.random() * (max - min) + min),
+    height: Math.floor(Math.random() * (max - min) + min),
+    degree: Math.floor(Math.random() * 360),
+    speed: Math.floor(Math.random() * (7 - 2) + 2),
+    color: 'yellow',
+  }
+  asteroids.push(asteroid);
+}
+
+// calculate if you hit an asteroid
+let calcLaserHits = () => {
+  // for each laser current on screen
+  for (let i = 0; i < player.ship.lasers.active.length; i++) {
+    let laser = player.ship.lasers.active[i];
+    for (let a = 0; a < asteroids.length; a++) {
+      if (laser.x >= asteroids[a].x &&
+          laser.x <= (asteroids[a].x + asteroids[a].width) &&
+          laser.y <= asteroids[a].y &&
+          laser.y >= (asteroids[a].y - asteroids[a].height)
+         ) {
+        // you should be between this asteroid
+        console.log('you hit an asteroid!');
+        asteroids.splice(a, 1);
+        player.score++;
+      }
+    }
+  }
+}
+
+// calculate if you got hit by an asteroid
+let calcAsteroidHits = () => {
+  // for each laser current on screen
+  let ship = player.ship;
+  for (let a = 0; a < asteroids.length; a++) {
+    if (ship.x >= asteroids[a].x &&
+        ship.x <= (asteroids[a].x + asteroids[a].width) &&
+        ship.y <= asteroids[a].y &&
+        ship.y >= (asteroids[a].y - asteroids[a].height)
+       ) {
+      // you should be between this asteroid
+      console.log('you got hit an asteroid!');
+      asteroids.splice(a, 1);
+      player.lives--;
+    }
   }
 }
 
@@ -244,7 +337,7 @@ let drawRect = (rectangle, rotation = 0) => {
   ctx.setTransform(1, 0, 0, 1, 0, 0); // honestly no idea that this is: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
 };
 
-let drawShip = (rectangle, rotation = 0) => {
+let drawRotatedRectangle = (rectangle, rotation = 0) => {
   ctx.save();
   ctx.beginPath();
   ctx.translate((rectangle.x + rectangle.width / 2), (rectangle.y + rectangle.height / 2)); // this is supposed to rotate it around the center point
@@ -259,7 +352,7 @@ let drawShip = (rectangle, rotation = 0) => {
 
 // if you want to draw some text on the screen use this function
 let drawText = (text) => {
-  ctx.fillStyle = text.color | '#fff';
+  ctx.fillStyle = '#fff';
   ctx.font = '20px Helvetica';
   ctx.fillText(text.message, text.x, text.y);
 };
