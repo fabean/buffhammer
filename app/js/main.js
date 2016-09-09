@@ -1,3 +1,5 @@
+'use strict';
+
 let c,
     ctx,
     fps = 60,
@@ -29,7 +31,8 @@ let c,
       lives: 10,
     },
     asteroids = [],
-    keysDown = {};
+    keysDown = {},
+    startScreen = false;
 
 // I've made player an object with ship instead it because I would think lots of other things go in there too.
 
@@ -79,11 +82,44 @@ let animationLoop = () => {
   render();
 }
 
+let gameOver = () => {
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0,c.width,c.height);
+
+  // write the health
+  ctx.fillStyle = 'white';
+  ctx.font = '40px Helvetica';
+  let message = 'You lost!';
+  let messageTextWidth = ctx.measureText(message);
+  ctx.fillText(message, (c.width/2 - messageTextWidth.width/2), 200)
+
+  ctx.fillStyle = 'white';
+  ctx.font = '20px Helvetica';
+  let restartText = 'Press space to start again';
+  let restartTextWidth = ctx.measureText(restartText);
+  ctx.fillText(restartText, (c.width/2 - restartTextWidth.width/2), 300)
+}
+
+let restartGame = () => {
+  player.lives = 10;
+  player.score = 0;
+  player.ship.lasers.active = [];
+  asteroids = [];
+  startScreen = false;
+}
+
+
 let render = () => {
+
+  movePlayer();
+
+  if (startScreen) {
+    gameOver();
+    return;
+  }
   // all of your render code goes here
   drawRect(background);
 
-  movePlayer();
   drawRotatedRectangle(player.ship, player.ship.rotation);
 
   drawLasers(player.ship.lasers.active);
@@ -91,8 +127,12 @@ let render = () => {
   getAsteroids();
 
   calcLaserHits();
-  calcAsteroidHits();
+  calcShipHits();
 
+  renderStatusBar();
+}
+
+let renderStatusBar = () => {
   // write the score
   let score = {
     message: `Score: ${player.score}`,
@@ -116,13 +156,13 @@ let movePlayer = () => {
     var movement = calcMove(player.ship.rotation, 'forward', player.ship.speed.currentSpeed);
     player.ship.y += movement.y;
     player.ship.x += movement.x;
-    calcWallCollision();
+    player.ship = calcWallCollision(player.ship);
   }
   if (40 in keysDown) { // Player holding down
     var movement = calcMove(player.ship.rotation, 'backward', player.ship.speed.currentSpeed);
-    player.ship.y += movement.y;
-    player.ship.x += movement.x;
-    calcWallCollision();
+    player.ship.y -= movement.y;
+    player.ship.x -= movement.x;
+    player.ship = calcWallCollision(player.ship);
   }
   if (37 in keysDown) { // Player holding left
     player.ship.rotation += -player.ship.speed.rotate; // left is a negative degree
@@ -131,30 +171,35 @@ let movePlayer = () => {
     player.ship.rotation += player.ship.speed.rotate; // right is a positive degree
   }
   if (32 in keysDown) { // space
-    fireLaser();
+    if (startScreen) {
+      restartGame();
+    } else {
+      fireLaser();
+    }
   }
 }
 
 // if you hit the wall jump to the other side
-let calcWallCollision = (x, y) => {
-  if (player.ship.y <= 0) {
-    player.ship.y = c.height;
-  } else if (player.ship.y >= c.height) {
-    player.ship.y = 0;
+let calcWallCollision = (unit) => {
+  if (unit.y <= 0) {
+    unit.y = c.height;
+  } else if (unit.y >= c.height) {
+    unit.y = 0;
   }
 
-  if (player.ship.x <= 0) {
-    player.ship.x = c.width;
-  } else if (player.ship.x >= c.width) {
-    player.ship.x = 0;
+  if (unit.x <= 0) {
+    unit.x = c.width;
+  } else if (unit.x >= c.width) {
+    unit.x = 0;
   }
+
+  return unit;
 }
 
 let fireLaser = () => {
   // only fire if charged
   if (player.ship.lasers.charged) {
     player.ship.lasers.charged = 0; // don't let us fire again until recharged
-    console.log('pew');
     let laser = {
       x: player.ship.x + (player.ship.width / 2) -1,
       y: player.ship.y,
@@ -177,15 +222,8 @@ let drawLasers = (lasers) => {
     var movement = calcMove(lasers[i].rotation, 'forward', lasers[i].speed);
     lasers[i].y += movement.y;
     lasers[i].x += movement.x;
-    if (
-      lasers[i].x > (c.width+50) ||
-      lasers[i].x < -50 ||
-      lasers[i].y > (c.height+50) ||
-      lasers[i].y < -50) {
-        player.ship.lasers.active.splice(i, 1); // remove this laser from the array because it's off screen
-    } else {
-      drawRotatedRectangle(lasers[i], lasers[i].rotation);
-    }
+    lasers[i] = calcWallCollision(lasers[i]);
+    drawRotatedRectangle(lasers[i], lasers[i].rotation);
   }
 }
 
@@ -200,16 +238,8 @@ let getAsteroids = () => {
     var movement = calcMove(asteroids[i].degree, 'sure', asteroids[i].speed); // calc where we're going
     asteroids[i].y += movement.y;
     asteroids[i].x += movement.x;
-    // I'm giving everything a +-50pixel from edge of screen buffer before we drop it
-    if (
-      asteroids[i].x > (c.width+50) ||
-      asteroids[i].x < -50 ||
-      asteroids[i].y > (c.height+50) ||
-      asteroids[i].y < -50) {
-        asteroids.splice(i, 1); // remove this astroid from the array because it's off screen
-    } else {
-      drawRotatedRectangle(asteroids[i], asteroids[i].degree);
-    }
+    asteroids[i] = calcWallCollision(asteroids[i]);
+    drawRotatedRectangle(asteroids[i], asteroids[i].degree);
   }
 };
 
@@ -242,8 +272,9 @@ let calcLaserHits = () => {
           laser.y >= (asteroids[a].y - asteroids[a].height)
          ) {
         // you should be between this asteroid
-        console.log('you hit an asteroid!');
+        // when you hit an asteroid we remove the asteroid and the laser
         asteroids.splice(a, 1);
+        player.ship.lasers.active.splice(i, 1);
         player.score++;
       }
     }
@@ -251,7 +282,7 @@ let calcLaserHits = () => {
 }
 
 // calculate if you got hit by an asteroid
-let calcAsteroidHits = () => {
+let calcShipHits = () => {
   // for each laser current on screen
   let ship = player.ship;
   for (let a = 0; a < asteroids.length; a++) {
@@ -261,10 +292,24 @@ let calcAsteroidHits = () => {
         ship.y >= (asteroids[a].y - asteroids[a].height)
        ) {
       // you should be between this asteroid
-      console.log('you got hit an asteroid!');
       asteroids.splice(a, 1);
       player.lives--;
     }
+  }
+  let lasers = player.ship.lasers.active;
+  for (let i = 0; i < lasers.length; i++) {
+    if (lasers[i].x >= ship.x &&
+        lasers[i].x <= ship.x + ship.width &&
+        lasers[i].y >= ship.y &&
+        lasers[i].y <= ship.y + ship.height
+       ) {
+        player.ship.lasers.active.splice(i, 1);
+        player.lives--;
+    }
+  }
+  // see if you just died
+  if (player.lives <= 0) {
+    startScreen = true;
   }
 }
 
@@ -320,6 +365,9 @@ let calcMove = (degree, direction, speed) => {
 
   return movement;
 }
+
+
+
 
 // if you want to draw lots of circles you'll use this function
 let drawCircle = (circle) => {
