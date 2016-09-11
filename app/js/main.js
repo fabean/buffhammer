@@ -17,7 +17,7 @@ let c,
           currentX: 0,
           currentY: 0,
         },
-        width: 10,
+        width: 19,
         height: 10,
         rotation: 0,
         lasers: {
@@ -95,7 +95,7 @@ let gameOver = () => {
 
   ctx.fillStyle = 'white';
   ctx.font = '20px Helvetica';
-  let restartText = 'Press space to start again';
+  let restartText = 'Press S to start again';
   let restartTextWidth = ctx.measureText(restartText);
   ctx.fillText(restartText, (c.width/2 - restartTextWidth.width/2), 300)
 }
@@ -120,7 +120,8 @@ let render = () => {
   // all of your render code goes here
   drawRect(background);
 
-  drawRotatedRectangle(player.ship, player.ship.rotation);
+  //drawRotatedRectangle(player.ship, player.ship.rotation);
+  drawShip(player.ship);
 
   drawLasers(player.ship.lasers.active);
 
@@ -171,10 +172,11 @@ let movePlayer = () => {
     player.ship.rotation += player.ship.speed.rotate; // right is a positive degree
   }
   if (32 in keysDown) { // space
+    fireLaser();
+  }
+  if (83 in keysDown) { // S
     if (startScreen) {
       restartGame();
-    } else {
-      fireLaser();
     }
   }
 }
@@ -201,7 +203,7 @@ let fireLaser = () => {
   if (player.ship.lasers.charged) {
     player.ship.lasers.charged = 0; // don't let us fire again until recharged
     let laser = {
-      x: player.ship.x + (player.ship.width / 2) -1,
+      x: player.ship.x + (player.ship.width / 2) + 10,
       y: player.ship.y,
       width: 2,
       height: 6,
@@ -239,7 +241,7 @@ let getAsteroids = () => {
     asteroids[i].y += movement.y;
     asteroids[i].x += movement.x;
     asteroids[i] = calcWallCollision(asteroids[i]);
-    drawRotatedRectangle(asteroids[i], asteroids[i].degree);
+    drawRotatedOutline(asteroids[i], asteroids[i].degree);
   }
 };
 
@@ -248,11 +250,12 @@ let generateAsteroids = () => {
   // most of this is going to be completely randomly generated
   let min = 4;
   let max = 50;
+  let size = Math.floor(Math.random() * (max - min) + min);
   let asteroid = {
     x: Math.floor(Math.random() * (c.width + 100) - 50),
     y: Math.floor(Math.random() * (c.height + 100) - 50),
-    width: Math.floor(Math.random() * (max - min) + min),
-    height: Math.floor(Math.random() * (max - min) + min),
+    width: size,
+    height: size,
     degree: Math.floor(Math.random() * 360),
     speed: Math.floor(Math.random() * (7 - 2) + 2),
     color: 'yellow',
@@ -366,9 +369,6 @@ let calcMove = (degree, direction, speed) => {
   return movement;
 }
 
-
-
-
 // if you want to draw lots of circles you'll use this function
 let drawCircle = (circle) => {
   ctx.fillStyle = circle.color;
@@ -398,6 +398,35 @@ let drawRotatedRectangle = (rectangle, rotation = 0) => {
   ctx.restore();
 };
 
+let drawShip = (ship) => {
+  ctx.save();
+  ctx.translate(ship.x >> 0, ship.y >> 0); // this is supposed to rotate it around the center point
+  ctx.rotate(ship.rotation * Math.PI / 180); // this is used to rotate the object
+  //ctx.rect(-rectangle.width/2, -rectangle.height/2, rectangle.width, rectangle.height);
+  ctx.beginPath();
+  ctx.moveTo(10, 0);
+  ctx.lineTo(-10, -10);
+  ctx.lineTo(-10, 10);
+  ctx.lineTo(10, 0);
+  ctx.fillStyle = 'white';
+  ctx.fill();
+  ctx.restore();
+}
+// I want to be able to draw borders too
+let drawRotatedOutline = (rectangle, rotation = 0) => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.translate((rectangle.x + rectangle.width / 2), (rectangle.y + rectangle.height / 2)); // this is supposed to rotate it around the center point
+  ctx.rotate(rotation * Math.PI / 180); // this is used to rotate the object
+  ctx.rect(-rectangle.width/2, -rectangle.height/2, rectangle.width, rectangle.height);
+  ctx.fillStyle = 'black';
+  ctx.fill();
+  ctx.strokeStyle = rectangle.color;
+  ctx.stroke();
+  //ctx.fillRect(-rectangle.x/2, -rectangle.y/2, rectangle.width, rectangle.height);
+  //ctx.setTransform(1, 0, 0, 1, 0, 0); // honestly no idea that this is: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
+  ctx.restore();
+};
 // if you want to draw some text on the screen use this function
 let drawText = (text) => {
   ctx.fillStyle = '#fff';
